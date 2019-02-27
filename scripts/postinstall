@@ -1,0 +1,25 @@
+#!/bin/bash
+
+export PATH=/usr/bin:/bin:/usr/sbin:/sbin
+
+shells="$3/etc/shells"
+
+if [[ -f "$shells" ]]; then
+    if [[ -x "$3/usr/local/bin/bash4" ]]; then
+        if ! grep "^/usr/local/bin/bash4\$" "$shells" ; then
+            echo "/usr/local/bin/bash4" >> "$shells"
+        fi
+    fi
+    if [[ -x "$3/usr/local/bin/bash5" ]]; then
+        if ! grep "^/usr/local/bin/bash5\$" "$shells" ; then
+            echo "/usr/local/bin/bash5" >> "$shells"
+        fi
+    fi
+    if [[ -x "$3/usr/local/bin/bash" ]]; then
+        if ! grep "^/usr/local/bin/bash\$" "$shells" ; then
+            echo "/usr/local/bin/bash" >> "$shells"
+        fi
+    fi
+fi
+
+exit 0
