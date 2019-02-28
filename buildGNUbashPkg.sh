@@ -30,7 +30,7 @@ fi
 # setup the directories
 
 projectdir=$(dirname "$0")
-# remove '.' from the path
+# replace '.' in the path
 projectdir=$(python -c "import os; print(os.path.realpath('${projectdir}'))")
 
 downloaddir="${projectdir}/downloads"
@@ -45,7 +45,8 @@ fi
 
 
 # clean out the build dir
-rm -Rf "${builddir}"/*
+
+rm -Rf "${builddir:?}"/*
 
 
 # setup paths and names
@@ -60,9 +61,8 @@ url="ftp://ftp.gnu.org/gnu/bash/${archivename}"
 
 if [[ ! -f "${archivepath}" ]]; then
     echo "downloading $bashname"
-    curl "$url" -o "${archivepath}"
 
-    if [[ $? -ne 0 ]]; then
+    if ! curl "$url" -o "${archivepath}"; then
         echo "could not download ${url}"
         exit 1
     fi
@@ -72,9 +72,9 @@ fi
 # extract the archive
 
 echo "extracting ${archivepath}"
-tar -xzvf "${archivepath}" -C "${builddir}"
 
-if [[ $? -ne 0 ]]; then
+
+if ! tar -xzvf "${archivepath}" -C "${builddir}" ; then
     echo "could not extract ${archivename}"
     exit 1
 fi
@@ -91,23 +91,34 @@ mkdir -p "$payloaddir"
 
 # configure
 
-cd "$sourcedir"
+echo "configuring $sourcedir"
+
+if ! cd "$sourcedir" ; then
+    echo "something went wrong, cannot cd to $sourcedir"
+    exit 1
+fi
+
 "$sourcedir/configure" --srcdir="$sourcedir" --prefix="$payloaddir"
 
 
 # build
+
+echo "building in $payloaddir"
 
 make install
 
 
 # rename the bash binary to bash4 or bash5
 
-if [[ renamebinary -eq 1 ]]; then
+if [[ $renamebinary -eq 1 ]]; then
     majorversion="${version:0:1}"
+    echo "renaming binary to bash${majorversion}"
     mv "${payloaddir}/bin/bash" "${payloaddir}/bin/bash${majorversion}"
 fi
 
+
 # build the pkg
+
 pkgpath="${projectdir}/${pkgname}-${version}.pkg"
 
 pkgbuild --root "${payloaddir}" \
