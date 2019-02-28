@@ -5,21 +5,18 @@ export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 shells="$3/etc/shells"
 
 if [[ -f "$shells" ]]; then
-    if [[ -x "$3/usr/local/bin/bash4" ]]; then
-        if ! grep "^/usr/local/bin/bash4\$" "$shells" ; then
-            echo "/usr/local/bin/bash4" >> "$shells"
+    for binary in "$3"/usr/local/bin/bash* ; do
+        # remove target from path
+        binary=${binary#$3}
+        
+        # skip bashbug
+        if [[ ${binary} != *bashbug ]]; then
+            # add path to /etc/shells if not contained yet
+            if ! grep -q "^${binary}\$" "$shells" ; then
+                echo "${binary}" >> "$shells"
+            fi
         fi
-    fi
-    if [[ -x "$3/usr/local/bin/bash5" ]]; then
-        if ! grep "^/usr/local/bin/bash5\$" "$shells" ; then
-            echo "/usr/local/bin/bash5" >> "$shells"
-        fi
-    fi
-    if [[ -x "$3/usr/local/bin/bash" ]]; then
-        if ! grep "^/usr/local/bin/bash\$" "$shells" ; then
-            echo "/usr/local/bin/bash" >> "$shells"
-        fi
-    fi
+    done
 fi
 
 exit 0
