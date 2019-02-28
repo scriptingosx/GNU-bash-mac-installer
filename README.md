@@ -8,4 +8,6 @@ The resulting package installer will install `bash` in `/usr/local/bin` and the 
 
 This script will change the name of the `bash` binary installed in `/usr/local/bin/` to `bash5` or `bash4` to avoid _any_ naming conflicts with the built-in `bash` v3 in `/bin`. You can change this bahavior by setting the `renamebinary` variable in line 13 to `0`. Or you could modify the `postinstall` script to add a symbolic link.
 
-You can get more background to this script in this post on my weblog.
+The path to the `bash` binary will be added to `/etc/shells` on the target system, so that users can use `chsh` to switch their default shell.
+
+You can get more background to this script in [this post on my weblog](https://scriptingosx.com/?p=849).
