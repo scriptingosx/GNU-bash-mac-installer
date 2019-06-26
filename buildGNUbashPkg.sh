@@ -27,6 +27,7 @@ install_location="/usr/local"
 
 # requires Xcode or Developer Command line tools
 
+echo "## checking for Dev Tools"
 if ! xcode-select -p ; then
     echo "this script requires Xcode or the Developer CLI tools to be installed"
     exit 1
@@ -68,7 +69,7 @@ rm -Rf "${builddir:?}"/*
 
 # check if archive already exists, don't re-download
 if [[ ! -f "${archivepath}" ]]; then
-    echo "downloading $bashname to $archivepath"
+    echo "## downloading $bashname to $archivepath"
 
     if ! curl "$url" -o "${archivepath}"; then
         echo "could not download ${url}"
@@ -79,9 +80,9 @@ fi
 
 # extract the archive
 
-echo "extracting ${archivepath}"
+echo "## extracting ${archivepath}"
 
-if ! tar -xzvf "${archivepath}" -C "${builddir}" ; then
+if ! tar -xzf "${archivepath}" -C "${builddir}" ; then
     echo "could not extract ${archivename}"
     exit 1
 fi
@@ -100,7 +101,7 @@ mkdir -p "$patchesdir"
 
 # download patches
 
-echo "downloading patches"
+echo "## downloading patches"
 
 if ! cd "$patchesdir"; then 
     echo "something went wrong, cannot change directory to $patchesdir"
@@ -113,7 +114,7 @@ curl "https://ftp.gnu.org/gnu/bash/bash-${version}-patches/bash${nodotversion}-[
 
 # apply patches
 
-echo "Applying patches"
+echo "## applying patches"
 
 nodotversion=${version//./} # removes '.'
 
@@ -124,12 +125,12 @@ fi
 
 patchcount=0
 for p in "$patchesdir/bash${nodotversion}-"???; do
-    if patch -p0 -i "$p"; then
+    if patch -p0 -i "$p" --quiet; then
         patchcount=$((patchcount +1))
     fi
 done
 
-echo "applied $patchcount patches"
+echo "## applied $patchcount patches"
 
 if [[ $patchcount -gt 0 ]]; then
     patchedversion="$version.$patchcount"
@@ -139,16 +140,16 @@ fi
 
 # configure
 
-echo "configuring $sourcedir"
+echo "## configuring $sourcedir"
 
-"$sourcedir/configure" --prefix="$payloaddir"
+"$sourcedir/configure" --prefix="$payloaddir" --quiet
 
 
 # build
 
-echo "building in $payloaddir"
+echo "## building in $payloaddir"
 
-make install
+make install --quiet
 
 
 # rename the bash binary to bash4 or bash5
@@ -157,7 +158,7 @@ if [[ $renamebinary -eq 1 ]]; then
     # get first part of version
     majorversion="${version%%.*}"
     
-    echo "renaming binary to bash${majorversion}"
+    echo "## renaming binary to bash${majorversion}"
     
     mv "${payloaddir}/bin/bash" "${payloaddir}/bin/bash${majorversion}"
 fi
@@ -167,7 +168,7 @@ fi
 
 pkgpath="${projectdir}/${pkgname}-${patchedversion}.pkg"
 
-echo "building package $pkgpath"
+echo "## building package $pkgpath"
 
 pkgbuild --root "${payloaddir}" \
          --identifier "${identifier}" \
