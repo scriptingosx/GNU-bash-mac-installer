@@ -95,15 +95,51 @@ fi
 payloaddir="${builddir}/payload"
 mkdir -p "$payloaddir"
 
+patchesdir="${builddir}/patches"
+mkdir -p "$patchesdir"
 
-# configure
+# download patches
 
-echo "configuring $sourcedir"
+echo "downloading patches"
+
+if ! cd "$patchesdir"; then 
+    echo "something went wrong, cannot change directory to $patchesdir"
+    exit 1
+fi
+
+nodotversion=${version//./} # removes '.'
+
+curl "https://ftp.gnu.org/gnu/bash/bash-${version}-patches/bash${nodotversion}-[001-099]" -f --silent -O
+
+# apply patches
+
+echo "Applying patches"
+
+nodotversion=${version//./} # removes '.'
 
 if ! cd "$sourcedir" ; then
     echo "something went wrong, cannot change directory to $sourcedir"
     exit 1
 fi
+
+patchcount=0
+for p in "$patchesdir/bash${nodotversion}-"???; do
+    if patch -p0 -i "$p"; then
+        patchcount=$((patchcount +1))
+    fi
+done
+
+echo "applied $patchcount patches"
+
+if [[ $patchcount -gt 0 ]]; then
+    patchedversion="$version.$patchcount"
+else
+    patchedversion="$version"
+fi
+
+# configure
+
+echo "configuring $sourcedir"
 
 "$sourcedir/configure" --prefix="$payloaddir"
 
@@ -129,13 +165,13 @@ fi
 
 # build the pkg
 
-pkgpath="${projectdir}/${pkgname}-${version}.pkg"
+pkgpath="${projectdir}/${pkgname}-${patchedversion}.pkg"
 
 echo "building package $pkgpath"
 
 pkgbuild --root "${payloaddir}" \
          --identifier "${identifier}" \
-         --version "${version}" \
+         --version "${patchedversion}" \
          --scripts "${projectdir}/scripts" \
          --install-location "${install_location}" \
          "${pkgpath}"
