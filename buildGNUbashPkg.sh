@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 
@@ -41,12 +41,12 @@ projectdir=$(dirname "$0")
 projectdir=$(python -c "import os; print(os.path.realpath('${projectdir}'))")
 
 downloaddir="${projectdir}/downloads"
-if [[ ! -d "$downloaddir" ]]; then
+if [ ! -d "$downloaddir" ]; then
     mkdir -p "$downloaddir"
 fi
 
 builddir="${projectdir}/build"
-if [[ ! -d "$builddir" ]]; then
+if [ ! -d "$builddir" ]; then
     mkdir -p "$builddir"
 fi
 
@@ -56,7 +56,8 @@ fi
 bashname="bash-${version}"
 archivename="${bashname}.tar.gz"
 archivepath="${downloaddir}/${archivename}"
-url="ftp://ftp.gnu.org/gnu/bash/${archivename}"
+ftpurl="ftp://ftp.gnu.org/gnu/bash"
+archiveurl="${ftpurl}/${archivename}"
 
 
 # clean out the build dir
@@ -68,11 +69,11 @@ rm -Rf "${builddir:?}"/*
 # download the archive
 
 # check if archive already exists, don't re-download
-if [[ ! -f "${archivepath}" ]]; then
+if [ ! -f "${archivepath}" ]; then
     echo "## downloading $bashname to $archivepath"
 
-    if ! curl "$url" -o "${archivepath}"; then
-        echo "could not download ${url}"
+    if ! curl "$archiveurl" -o "${archivepath}"; then
+        echo "could not download ${archiveurl}"
         exit 1
     fi
 fi
@@ -88,7 +89,7 @@ if ! tar -xzf "${archivepath}" -C "${builddir}" ; then
 fi
 
 sourcedir="${builddir}/$bashname"
-if [[ ! -d "$sourcedir" ]]; then
+if [ ! -d "$sourcedir" ]; then
     echo "something went wrong, couldn't find $sourcedir"
     exit 1
 fi
@@ -108,15 +109,23 @@ if ! cd "$patchesdir"; then
     exit 1
 fi
 
-nodotversion=${version//./} # removes '.'
+nodotversion=$(printf '%s' "$version" | tr -d '.') # removes '.'
 
-curl "https://ftp.gnu.org/gnu/bash/bash-${version}-patches/bash${nodotversion}-[001-099]" -f --silent -O
+patcheslist=$(curl "${ftpurl}/${bashname}-patches/" -l --silent )
+
+for patchname in $patcheslist; do
+    # skip files with sig extension
+    if [ "${patchname##*.}" != "sig" ]; then
+        #echo "downloading $patchname"
+        curl "${ftpurl}/${bashname}-patches/${patchname}" --silent -O
+    fi
+done
+
+#curl "https://ftp.gnu.org/gnu/bash/bash-${version}-patches/bash${nodotversion}-[001-099]" -f --silent -O
 
 # apply patches
 
 echo "## applying patches"
-
-nodotversion=${version//./} # removes '.'
 
 if ! cd "$sourcedir" ; then
     echo "something went wrong, cannot change directory to $sourcedir"
@@ -132,7 +141,7 @@ done
 
 echo "## applied $patchcount patches"
 
-if [[ $patchcount -gt 0 ]]; then
+if [ $patchcount -gt 0 ]; then
     patchedversion="$version.$patchcount"
 else
     patchedversion="$version"
@@ -154,7 +163,7 @@ make install --quiet
 
 # rename the bash binary to bash4 or bash5
 
-if [[ $renamebinary -eq 1 ]]; then
+if [ $renamebinary -eq 1 ]; then
     # get first part of version
     majorversion="${version%%.*}"
     
