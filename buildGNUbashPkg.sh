@@ -136,6 +136,9 @@ patchcount=0
 for p in "$patchesdir/bash${nodotversion}-"???; do
     if patch -p0 -i "$p" --quiet; then
         patchcount=$((patchcount +1))
+    else
+        echo "## error while patching $p"
+        exit 1
     fi
 done
 
