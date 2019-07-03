@@ -188,3 +188,10 @@ pkgbuild --root "${payloaddir}" \
          --scripts "${projectdir}/scripts" \
          --install-location "${install_location}" \
          "${pkgpath}"
+         
+# reveal pkg in Finder
+if [ -e "$pkgpath" ]; then
+    open -R "$pkgpath"
+fi
+
+
